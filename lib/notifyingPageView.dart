@@ -58,7 +58,7 @@ class _NotifyingPageViewState extends State<NotifyingPageView> {
                 return Container(
                     height: 10,
                     alignment: Alignment.center,
-                    color: Colors.white54,
+                    color: Colors.transparent,
                     child: Text(
                         "Card number ${index+1}",
                         style: TextStyle(
