@@ -3,6 +3,7 @@ import 'notifyingPageView.dart';
 
 void main() => runApp(MyApp());
 
+/// Maps a value n from the range start1, stop1 to start2, stop2
 mapValue(n, start1, stop1, start2, stop2) {
   return ((n - start1) / (stop1 - start1)) * (stop2 - start2) + start2;
 }
@@ -13,9 +14,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Parallax Scrolling',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: ThemeData.dark(),
       home: HomePage(),
     );
   }
@@ -28,7 +27,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   ValueNotifier<double> _notifier;
-  int _screenCount;
+  int _screenCount = 1;
   double _sliderVal = 1;
   ImageProvider _image;
 
@@ -41,7 +40,6 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     _notifier = ValueNotifier<double>(0);
-    _screenCount = 1;
 
     _image = NetworkImage(
         "https://res.cloudinary.com/rootworld/image/upload/v1573488108/bBwallhaven-13x79v.jpg");
@@ -66,29 +64,31 @@ class _HomePageState extends State<HomePage> {
               );
             },
           ),
+          // Scrollable Page View
           NotifyingPageView(
             scrollMode: Axis.horizontal,
             notifier: _notifier,
             numScreens: _screenCount,
           ),
+          //  A Slider that updates the number of pages
           Positioned(
-            // top: 0,
-            bottom: MediaQuery.of(context).size.height * 0.1,
+            // Position it at the bottom
+            bottom: MediaQuery.of(context).size.height * 0.025,
             width: MediaQuery.of(context).size.width,
             child: Container(
               alignment: Alignment.bottomCenter,
               child: SizedBox(
                 height: MediaQuery.of(context).size.height * 0.04,
-                width: null,
                 child: Slider(
                   onChanged: (dbl) {
+                    // Slider was updated => setstate
                     setState(() {
                       _sliderVal = dbl;
                       _screenCount = _sliderVal.floor();
                       print("$_screenCount");
                     });
                   },
-                  max: 20.toDouble(),
+                  max: 20,
                   min: 1,
                   divisions: 20 - 1,
                   value: _sliderVal,
@@ -103,6 +103,8 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
+/// A SlidingImage that needs to be a statefulWidget
+/// because it needs an re build every time a page is scrolled
 class SlidingImage extends StatefulWidget {
   const SlidingImage({
     Key key,
@@ -127,9 +129,12 @@ class _SlidingImageState extends State<SlidingImage> {
 
   @override
   initState() {
+    // init values before the image gets loaded
+    // Should be initialized as they must mot be null
     _aspectRatio = 16 / 9;
     _maxWidth = 360;
 
+    // Get the image width and the image's aspect ratio
     getImageInfo();
     super.initState();
   }
@@ -137,8 +142,10 @@ class _SlidingImageState extends State<SlidingImage> {
   @override
   Widget build(BuildContext context) {
     var _aligner = getAlignment();
+
+    // To Display a fullscreen image
     return OverflowBox(
-      // -1 to 1 is start to end
+      // required alignment, maxWidth
       alignment: _aligner,
       maxWidth: _maxWidth,
       child: AspectRatio(
@@ -159,29 +166,41 @@ class _SlidingImageState extends State<SlidingImage> {
     AlignmentGeometry _aligner;
 
     if (widget.screenCount == 1) {
+      // single page
       _aligner = Alignment(0, 0);
     } else if (widget.screenCount == 2) {
       _aligner = Alignment(-0.5 + widget._notifier.value, 0);
     } else {
       double _offset;
       // full scroll
+      // -1 to 1 is start to end
       _offset =
           mapValue(widget._notifier.value, 0, widget.screenCount - 1, -1, 1);
-      // Equi scroll
+      // Equi scroll: scroll a fixed amount, will not reach the end
       //   _offset = -1 + (widget._notifier.value / (widget.screenCount / 2));
       _aligner = Alignment(_offset, 0);
     }
     return _aligner;
   }
 
-  void getImageInfo() {
-    widget._image
-        .resolve(ImageConfiguration(platform: TargetPlatform.android))
-        .addListener(ImageStreamListener((info, _) {
-      setState(() {
-        _aspectRatio = info.image.width / info.image.height;
-        _maxWidth = info.image.width.toDouble();
-      });
-    }));
+  /// Gets the image width and the image's aspect ratio
+  /// Then sets the state of this Widget
+  void getImageInfo() async {
+    widget._image.resolve(ImageConfiguration()).addListener(
+          ImageStreamListener(
+            (info, _) {
+              setState(() {
+                // Set the aspect ratio
+                _aspectRatio = info.image.width / info.image.height;
+                _maxWidth = info.image.width.toDouble();
+              });
+            },
+            // If 404 :(
+            onError: (info, trace) {
+              // Handle it
+              setState(() {});
+            },
+          ),
+        );
   }
 }
