@@ -42,7 +42,7 @@ class _HomePageState extends State<HomePage> {
     _notifier = ValueNotifier<double>(0);
 
     _image = NetworkImage(
-        "https://res.cloudinary.com/rootworld/image/upload/v1573488108/bBwallhaven-13x79v.jpg");
+        "https://res.cloudinary.com/rootworld/image/upload/v1573494542/doctor-strange-2560x1440-artwork-minimal-hd-9756.png");
 
     super.initState();
   }
